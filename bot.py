@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton
 # =====================================
 # НАСТРОЙКИ
 # =====================================
-
+import os
 TOKEN = "8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM"
 
 # ID админов
@@ -19,7 +19,7 @@ ADMIN_IDS = [
 
 # СЕКРЕТНЫЕ ССЫЛКИ АДМИНОВ
 VIP_REFS = {
-    "kx92la": 8490781536,
+    "kx92la": 8490781536C:\Users\akano\PycharmProjects\anon_bot,
     "mv81qp": 222222222
 }
 
