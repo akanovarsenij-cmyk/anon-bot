@@ -6,28 +6,28 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # =====================
-TOKEN
+# TOKEN
 # =====================
-TOKEN = os.getenv("8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM")
+TOKEN = "8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM"
 
 # =====================
-ADMINS
+# ADMINS
 # =====================
 ADMIN_IDS = [
     8490781536,
-    222222222
+    5812315702
 ]
 
 VIP_REFS = {
     "kx92la": 8490781536,
-    "mv81qp": 222222222
+    "mv81qp": 5812315702
 }
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
 # =====================
-DB
+# DB
 # =====================
 conn = sqlite3.connect("database.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -42,13 +42,13 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # =====================
-DATA
+# DATA
 # =====================
 last_messages = {}
 user_targets = {}
 
 # =====================
-START
+# START
 # =====================
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
@@ -94,7 +94,7 @@ async def start(message: types.Message):
     await message.answer(text)
 
 # =====================
-WRITE BUTTON
+# WRITE BUTTON
 # =====================
 @dp.callback_query_handler(lambda c: c.data.startswith("write_"))
 async def write(call: types.CallbackQuery):
@@ -103,7 +103,7 @@ async def write(call: types.CallbackQuery):
     await call.message.answer("✍️ Пиши сообщение")
 
 # =====================
-MESSAGE HANDLER
+# MESSAGE HANDLER
 # =====================
 @dp.message_handler(content_types=types.ContentTypes.TEXT)
 async def handle(message: types.Message):
@@ -156,7 +156,7 @@ async def handle(message: types.Message):
     del user_targets[user.id]
 
 # =====================
-RUN
+# RUN
 # =====================
 print("BOT STARTED")
 executor.start_polling(dp)
