@@ -1,15 +1,15 @@
 import sqlite3
 import time
-import os
 
+import os
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # =====================
 # TOKEN
-# =====================
-TOKEN = "8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM"
+import os
 
+TOKEN = os.getenv("8714853815:AAGHOAzbFKDO6yUM7B0SVOaqAB5IAqpywsM")
 # =====================
 # ADMINS
 # =====================
